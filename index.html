@@ -235,7 +235,7 @@ footer{text-align:center;font-size:11px;color:var(--text3);padding:18px;border-t
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 // INSTRUCCIÓN: Pega aquí tu URL de Apps Script entre las comillas
 // Ejemplo: "https://script.google.com/macros/s/AKfycbxXXX.../exec"
-const APPS_SCRIPT_URL_DEFAULT = "";
+const APPS_SCRIPT_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyF-3nyrHUD0GuhSrI90cjE1GbFAJ6ObFaWPZ1wzCIgt0Aafp_CMsB2Ha02sS9pSgkE/exec";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PC = {
@@ -275,7 +275,7 @@ function setSyncState(state, msg){
   else icon.classList.remove("spin");
 }
 
-function syncData(){
+async function syncData(){
   const url = getApiUrl();
   if(!url){
     document.getElementById("config-banner").style.display = "flex";
@@ -284,44 +284,26 @@ function syncData(){
   }
 
   setSyncState("loading", "Sincronizando…");
-  const cbName = "pp_cb_" + Date.now();
-  const script = document.createElement("script");
-  const timeout = setTimeout(() => {
-    delete window[cbName];
-    script.remove();
-    setSyncState("error", "Error de conexión");
-    showError("Timeout — verifica que la URL del script sea correcta y que el acceso sea 'Cualquier persona'");
-  }, 12000);
+  try {
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    if(!json.ok || !json.data) throw new Error("Respuesta inesperada del script");
 
-  window[cbName] = function(json) {
-    clearTimeout(timeout);
-    delete window[cbName];
-    script.remove();
-    try {
-      if(!json.ok || !json.data) throw new Error("Respuesta inesperada del script");
-      DATA = parseRows(json.data);
-      lastSync = new Date();
-      setSyncState("ok", "Actualizado " + lastSync.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}));
-      document.getElementById("footer-ts").textContent = lastSync.toLocaleString("es-CO");
-      populateFilters();
-      renderResumen();
-      renderTimeline();
-      renderTablero();
-    } catch(err) {
-      setSyncState("error", "Error al procesar datos");
-      showError(err.message);
-    }
-  };
+    DATA = parseRows(json.data);
+    lastSync = new Date();
+    setSyncState("ok", "Actualizado " + lastSync.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}));
+    document.getElementById("footer-ts").textContent = lastSync.toLocaleString("es-CO");
 
-  script.src = url + "?callback=" + cbName + "&t=" + Date.now();
-  script.onerror = () => {
-    clearTimeout(timeout);
-    delete window[cbName];
+    populateFilters();
+    renderResumen();
+    renderTimeline();
+    renderTablero();
+  } catch(err){
     setSyncState("error", "Error de conexión");
-    showError("No se pudo cargar el script. Verifica la URL y los permisos de la implementación.");
-  };
-  document.head.appendChild(script);
-  // Note: async/await not used here — JSONP is callback-based
+    showError(err.message);
+    console.error(err);
+  }
 }
 
 function parseRows(raw){
