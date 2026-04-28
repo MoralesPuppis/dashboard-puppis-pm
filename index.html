@@ -289,20 +289,31 @@ async function syncData(){
 
 function parseRows(raw){
   return raw.map(r => {
-    // Mapear los campos del Sheet a los que usa el dashboard
-    // Ajusta los nombres de columna si tu Sheet tiene encabezados distintos
+    // Buscar clave flexible ignorando saltos de linea y tildes
+    function get(r, keys){
+      for(const k of keys){
+        for(const rk of Object.keys(r)){
+          if(rk.replace(/\n/g," ").replace(/[^a-zA-Z0-9% ]/g,"").toLowerCase().trim() ===
+             k.replace(/[^a-zA-Z0-9% ]/g,"").toLowerCase().trim()){
+            return r[rk];
+          }
+        }
+      }
+      return "";
+    }
+    const dur_raw = get(r, ["Dias Restantes","Duracion dias","Dias"]);
     return {
-      p:      clean(r["Proyecto"] || r["proyecto"] || ""),
-      fase:   clean(r["Fase"] || r["fase"] || ""),
-      num:    clean(r["ID"] || r["#"] || r["Num. Accionable"] || ""),
-      acc:    clean(r["Accionable"] || r["accionable"] || ""),
-      ini:    clean(r["Fecha Inicio"] || r["Fecha\nInicio"] || r["fecha_inicio"] || ""),
-      fin:    clean(r["Fecha Fin"] || r["Fecha\nFin"] || r["fecha_fin"] || ""),
-      dur:    parseInt(r["Días"] || r["Duración (días)"] || r["Duración\n(días)"] || 0) || 0,
-      estado: clean(r["Estado"] || r["estado"] || "Pendiente"),
-      avance: parseInt(r["% Avance"] || r["avance"] || 0) || 0,
-      resp:   clean(r["Responsable"] || r["responsable"] || ""),
-      notas:  clean(r["Notas / Bloqueantes"] || r["Notas"] || r["notas"] || ""),
+      p:      clean(get(r, ["Proyecto","proyecto"])),
+      fase:   clean(get(r, ["Fase","fase"])),
+      num:    clean(get(r, ["ID","#","Num Accionable"])),
+      acc:    clean(get(r, ["Accionable","accionable"])),
+      ini:    clean(get(r, ["Fecha Inicio","fecha inicio"])),
+      fin:    clean(get(r, ["Fecha Fin","fecha fin"])),
+      dur:    parseInt(dur_raw) || 0,
+      estado: clean(get(r, ["Estado","estado"])) || "Pendiente",
+      avance: parseInt(get(r, ["% Avance","avance","Avance"])) || 0,
+      resp:   clean(get(r, ["Responsable","responsable"])),
+      notas:  clean(get(r, ["Notas  Bloqueantes","Notas","notas"])),
     };
   }).filter(r => r.p && r.acc);
 }
