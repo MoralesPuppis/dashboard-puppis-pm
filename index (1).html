@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framework Ejecución Ecommerce 2026 — Puppis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root {
+  --navy:#0D1B2A;--blue:#2563EB;--blue-lt:#EFF6FF;
+  --teal:#0D9488;--teal-lt:#F0FDFA;
+  --amber:#D97706;--amber-lt:#FFFBEB;
+  --purple:#7C3AED;--purp-lt:#F5F3FF;
+  --border:#E2E8F0;--bg:#F8FAFC;--surface:#FFFFFF;
+  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+  --radius:8px;--radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:var(--bg);min-height:100vh}
+
+.header{background:var(--navy);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{width:34px;height:34px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px}
+.h-title{font-family:'Syne',sans-serif;font-weight:600;color:#fff;font-size:14px;letter-spacing:-.02em}
+.h-sub{font-size:11px;color:#64748B;margin-top:1px}
+.header-right{display:flex;gap:8px;align-items:center}
+
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11px;color:#94A3B8;font-family:'DM Mono',monospace}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#94A3B8;flex-shrink:0}
+.sync-dot.ok{background:#22C55E}
+.sync-dot.loading{background:#F59E0B;animation:pulse .8s infinite}
+.sync-dot.error{background:#EF4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;border:none}
+.btn-sync{background:#fff;color:var(--navy)}
+.btn-sync:hover{background:#E2E8F0}
+.btn-sync:disabled{opacity:.5;cursor:not-allowed}
+.btn-pdf{background:transparent;color:#94A3B8;border:.5px solid #334155}
+.btn-pdf:hover{color:#fff;border-color:#64748B}
+.btn-sync svg,.btn-pdf svg{width:13px;height:13px;flex-shrink:0}
+.spin{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.nav-tabs{display:flex;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
+.nav-tab{padding:11px 18px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.nav-tab.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+.nav-tab:hover:not(.on){color:var(--text)}
+
+.shell{max-width:1280px;margin:0 auto;padding:20px 28px}
+.pane{display:none}.pane.on{display:block}
+
+/* Loading / error states */
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;gap:16px;color:var(--text3)}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+.error-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius-lg);padding:24px 28px;margin:20px 0}
+.error-box h3{font-family:'Syne',sans-serif;color:#991B1B;margin-bottom:8px;font-size:14px}
+.error-box p{font-size:12px;color:#7F1D1D;line-height:1.7}
+.error-box code{background:#FEE2E2;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px}
+
+/* Config panel */
+.config-banner{background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start}
+.config-banner svg{flex-shrink:0;margin-top:2px}
+.config-banner p{font-size:12px;color:#92400E;line-height:1.7}
+.config-banner code{background:#FEF3C7;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;color:#78350F}
+.config-banner input{width:100%;height:32px;padding:0 10px;font-size:11px;border:1px solid #FCD34D;border-radius:6px;background:#fff;font-family:'DM Mono',monospace;margin-top:6px;color:var(--text)}
+.btn-save-url{margin-top:8px;background:var(--amber);color:#fff;height:30px;padding:0 14px;font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;border:none;font-family:'Inter',sans-serif}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px}
+.kpi-label{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.kpi-val{font-size:24px;font-weight:600;font-family:'Syne',sans-serif;letter-spacing:-.03em}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* Project cards */
+.proj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.proj-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;border-left-width:4px}
+.proj-name{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;margin-bottom:4px}
+.prog-bar{height:5px;background:#E2E8F0;border-radius:3px;overflow:hidden;margin-top:6px}
+.prog-fill{height:5px;border-radius:3px;transition:width .4s}
+
+/* Table */
+.controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.controls select,.controls input{height:30px;padding:0 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:'Inter',sans-serif}
+.controls input{width:200px}
+.count-badge{font-size:11px;padding:3px 10px;background:var(--navy);color:#fff;border-radius:12px;font-family:'DM Mono',monospace}
+.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.tbl-scroll{overflow-x:auto;max-height:520px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;min-width:860px}
+thead th{background:var(--navy);color:#fff;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;padding:9px 12px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;font-family:'Syne',sans-serif}
+tbody tr.sep td{font-family:'Syne',sans-serif;font-weight:600;font-size:11px;color:#fff;padding:6px 12px}
+tbody tr:not(.sep):hover td{background:#F8FAFC}
+tbody td{padding:8px 12px;border-bottom:1px solid #F1F5F9;font-size:12px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:500;white-space:nowrap}
+.pill-pre{background:#EFF6FF;color:#1D4ED8}
+.pill-ko{background:#FFFBEB;color:#92400E;font-weight:600}
+.pill-post{background:#F0FDF4;color:#14532D}
+.pill-pend{background:#F1F5F9;color:#475569}
+.pill-prog{background:#DBEAFE;color:#1E40AF}
+.pill-done{background:#DCFCE7;color:#166534}
+.mini-bar{background:#E2E8F0;border-radius:3px;height:5px;width:60px;overflow:hidden;margin-top:3px}
+.mini-fill{height:5px;border-radius:3px}
+.sem{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+
+/* Timeline */
+.tl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;overflow-x:auto}
+.tl-proj-tag{font-family:'Syne',sans-serif;font-weight:600;font-size:10px;color:#fff;padding:4px 10px;border-radius:4px;display:inline-block;margin:8px 0 3px}
+.tl-legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.tl-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
+
+footer{text-align:center;font-size:11px;color:var(--text3);padding:18px;border-top:1px solid var(--border);margin-top:28px;font-family:'DM Mono',monospace}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">PP</div>
+    <div>
+      <div class="h-title">Framework Ejecución Ecommerce 2026</div>
+      <div class="h-sub">Puppis · Conectado a Google Sheets</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Sin sincronizar</span>
+    </div>
+    <button class="btn btn-sync" id="btn-sync" onclick="syncData()">
+      <svg id="sync-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 8A6 6 0 012.5 11M2 8a6 6 0 0111.5-3"/><path d="M14 4v4h-4M2 12v-4h4"/></svg>
+      Sincronizar
+    </button>
+    <button class="btn btn-pdf" onclick="exportPDF()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h6l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z"/><path d="M9 1v4h3M5 9h6M5 11.5h4"/></svg>
+      PDF
+    </button>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab on" onclick="showTab('resumen')">Resumen</div>
+  <div class="nav-tab" onclick="showTab('timeline')">Timeline</div>
+  <div class="nav-tab" onclick="showTab('tablero')">Tablero de ejecución</div>
+</div>
+
+<div class="shell">
+
+  <!-- CONFIG BANNER (se muestra si no hay URL configurada) -->
+  <div class="config-banner" id="config-banner" style="display:none">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#D97706" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 7v4M8 5.5v.5"/></svg>
+    <div style="flex:1">
+      <strong style="color:#92400E;font-size:12px">Configura tu URL de Apps Script</strong>
+      <p>Pega aquí la URL que copiaste al implementar el script en Google Apps Script:</p>
+      <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      <br>
+      <button class="btn-save-url" onclick="saveUrl()">Guardar y sincronizar</button>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="pane on" id="pane-resumen">
+    <div id="resumen-content">
+      <div class="loading-state"><div class="loading-spinner"></div><span>Cargando datos…</span></div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="pane" id="pane-timeline">
+    <div class="controls">
+      <select id="tl-proj" onchange="renderTimeline()"><option value="">Todos los proyectos</option></select>
+      <select id="tl-fase" onchange="renderTimeline()">
+        <option value="">Todas las fases</option>
+        <option>Pre-Kickoff</option><option>Kickoff</option><option>Post-Kickoff</option>
+      </select>
+      <span class="count-badge" id="tl-count">–</span>
+    </div>
+    <div class="tl-card" id="tl-content">
+      <div class="loading-state"><div class="loading-spinner"></div><span>Cargando…</span></div>
+    </div>
+  </div>
+
+  <!-- TABLERO -->
+  <div class="pane" id="pane-tablero">
+    <div class="controls">
+      <select id="flt-proj" onchange="renderTablero()"><option value="">Todos los proyectos</option></select>
+      <select id="flt-fase" onchange="renderTablero()">
+        <option value="">Todas las fases</option>
+        <option>Pre-Kickoff</option><option>Kickoff</option><option>Post-Kickoff</option>
+      </select>
+      <select id="flt-estado" onchange="renderTablero()">
+        <option value="">Todos los estados</option>
+        <option>Pendiente</option><option>En progreso</option><option>Completado</option>
+      </select>
+      <input type="text" id="search" placeholder="Buscar accionable…" oninput="renderTablero()">
+      <span class="count-badge" id="tbl-count">–</span>
+    </div>
+    <div class="tbl-card">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px">#</th>
+              <th style="width:160px">Proyecto</th>
+              <th style="width:95px">Fase</th>
+              <th>Accionable</th>
+              <th style="width:85px">Inicio</th>
+              <th style="width:85px">Fin</th>
+              <th style="width:48px;text-align:right">Días</th>
+              <th style="width:120px">Estado</th>
+              <th style="width:90px">Avance</th>
+              <th style="width:36px;text-align:center">●</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body">
+            <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3)">Sincroniza para cargar los datos</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Framework Ejecución Ecommerce 2026 · Puppis ·
+  <span id="footer-ts"></span> ·
+  Fuente: Google Sheets
+</footer>
+
+<script>
+// ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
+// INSTRUCCIÓN: Pega aquí tu URL de Apps Script entre las comillas
+// Ejemplo: "https://script.google.com/macros/s/AKfycbxXXX.../exec"
+const APPS_SCRIPT_URL_DEFAULT = "";
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PC = {
+  "Envío Programado":           {h:"#2563EB",lt:"#EFF6FF",txt:"#1D4ED8"},
+  "Tienda Infinita":            {h:"#0D9488",lt:"#F0FDFA",txt:"#0F766E"},
+  "Política de Envíos":         {h:"#D97706",lt:"#FFFBEB",txt:"#92400E"},
+  "Documentación de Procesos":  {h:"#7C3AED",lt:"#F5F3FF",txt:"#5B21B6"},
+};
+const MN = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+let DATA = [];
+let lastSync = null;
+
+function getApiUrl(){
+  return localStorage.getItem("pp_api_url") || APPS_SCRIPT_URL_DEFAULT;
+}
+function saveUrl(){
+  const v = document.getElementById("api-url-input").value.trim();
+  if(!v || !v.startsWith("https://script.google.com")){
+    alert("La URL no parece válida. Asegúrate de copiarla desde Apps Script → Implementar.");
+    return;
+  }
+  localStorage.setItem("pp_api_url", v);
+  document.getElementById("config-banner").style.display = "none";
+  syncData();
+}
+
+function setSyncState(state, msg){
+  const dot = document.getElementById("sync-dot");
+  const lbl = document.getElementById("sync-label");
+  const btn = document.getElementById("btn-sync");
+  const icon = document.getElementById("sync-icon");
+  dot.className = "sync-dot " + state;
+  lbl.textContent = msg;
+  btn.disabled = state === "loading";
+  if(state === "loading") icon.classList.add("spin");
+  else icon.classList.remove("spin");
+}
+
+function syncData(){
+  const url = getApiUrl();
+  if(!url){
+    document.getElementById("config-banner").style.display = "flex";
+    setSyncState("error", "URL no configurada");
+    return;
+  }
+
+  setSyncState("loading", "Sincronizando…");
+  const cbName = "pp_cb_" + Date.now();
+  const script = document.createElement("script");
+  const timeout = setTimeout(() => {
+    delete window[cbName];
+    script.remove();
+    setSyncState("error", "Error de conexión");
+    showError("Timeout — verifica que la URL del script sea correcta y que el acceso sea 'Cualquier persona'");
+  }, 12000);
+
+  window[cbName] = function(json) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    script.remove();
+    try {
+      if(!json.ok || !json.data) throw new Error("Respuesta inesperada del script");
+      DATA = parseRows(json.data);
+      lastSync = new Date();
+      setSyncState("ok", "Actualizado " + lastSync.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}));
+      document.getElementById("footer-ts").textContent = lastSync.toLocaleString("es-CO");
+      populateFilters();
+      renderResumen();
+      renderTimeline();
+      renderTablero();
+    } catch(err) {
+      setSyncState("error", "Error al procesar datos");
+      showError(err.message);
+    }
+  };
+
+  script.src = url + "?callback=" + cbName + "&t=" + Date.now();
+  script.onerror = () => {
+    clearTimeout(timeout);
+    delete window[cbName];
+    setSyncState("error", "Error de conexión");
+    showError("No se pudo cargar el script. Verifica la URL y los permisos de la implementación.");
+  };
+  document.head.appendChild(script);
+  // Note: async/await not used here — JSONP is callback-based
+}
+
+function parseRows(raw){
+  return raw.map(r => {
+    // Mapear los campos del Sheet a los que usa el dashboard
+    // Ajusta los nombres de columna si tu Sheet tiene encabezados distintos
+    return {
+      p:      clean(r["Proyecto"] || r["proyecto"] || ""),
+      fase:   clean(r["Fase"] || r["fase"] || ""),
+      num:    clean(r["ID"] || r["#"] || r["Num. Accionable"] || ""),
+      acc:    clean(r["Accionable"] || r["accionable"] || ""),
+      ini:    clean(r["Fecha Inicio"] || r["Fecha\nInicio"] || r["fecha_inicio"] || ""),
+      fin:    clean(r["Fecha Fin"] || r["Fecha\nFin"] || r["fecha_fin"] || ""),
+      dur:    parseInt(r["Días"] || r["Duración (días)"] || r["Duración\n(días)"] || 0) || 0,
+      estado: clean(r["Estado"] || r["estado"] || "Pendiente"),
+      avance: parseInt(r["% Avance"] || r["avance"] || 0) || 0,
+      resp:   clean(r["Responsable"] || r["responsable"] || ""),
+      notas:  clean(r["Notas / Bloqueantes"] || r["Notas"] || r["notas"] || ""),
+    };
+  }).filter(r => r.p && r.acc);
+}
+
+function clean(v){
+  if(v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+function fmtD(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  if(isNaN(d)) return s;
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+}
+function dLeft(fin){
+  if(!fin) return 999;
+  return Math.max(0, Math.round((new Date(fin) - new Date()) / 86400000));
+}
+function semInfo(row){
+  const e = row.estado;
+  if(e === "Completado") return {sym:"✓",bg:"#DCFCE7",col:"#166534"};
+  if(e === "En progreso") return dLeft(row.fin) <= 7
+    ? {sym:"!",bg:"#FEF3C7",col:"#92400E"}
+    : {sym:"●",bg:"#DBEAFE",col:"#1E40AF"};
+  return {sym:"–",bg:"#F1F5F9",col:"#94A3B8"};
+}
+
+function showError(msg){
+  document.getElementById("resumen-content").innerHTML = `
+    <div class="error-box">
+      <h3>No se pudo conectar con Google Sheets</h3>
+      <p>Error: <code>${msg}</code></p>
+      <p style="margin-top:8px">Verifica que:</p>
+      <ul style="margin:8px 0 0 16px;font-size:12px;color:#7F1D1D;line-height:1.9">
+        <li>La URL de Apps Script esté correctamente pegada en el archivo HTML</li>
+        <li>La implementación esté configurada como <strong>Cualquier persona</strong></li>
+        <li>El script esté correctamente implementado (no en borrador)</li>
+        <li>Tu conexión a internet esté activa</li>
+      </ul>
+    </div>`;
+}
+
+function populateFilters(){
+  const projs = [...new Set(DATA.map(r=>r.p))];
+  ["flt-proj","tl-proj"].forEach(id=>{
+    const sel = document.getElementById(id);
+    while(sel.options.length > 1) sel.remove(1);
+    projs.forEach(p => sel.add(new Option(p,p)));
+  });
+}
+
+function showTab(t){
+  document.querySelectorAll(".nav-tab").forEach((el,i)=>el.classList.toggle("on",["resumen","timeline","tablero"][i]===t));
+  document.querySelectorAll(".pane").forEach(el=>el.classList.remove("on"));
+  document.getElementById("pane-"+t).classList.add("on");
+}
+
+// ─── RESUMEN ─────────────────────────────────────────────────────────────────
+function renderResumen(){
+  if(!DATA.length){ document.getElementById("resumen-content").innerHTML='<div class="loading-state"><span>Sin datos. Pulsa Sincronizar.</span></div>'; return; }
+  const total = DATA.length;
+  const comp = DATA.filter(r=>r.estado==="Completado").length;
+  const prog = DATA.filter(r=>r.estado==="En progreso").length;
+  const avgAv = Math.round(DATA.reduce((s,r)=>s+r.avance,0)/total);
+
+  let html = `<div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Total accionables</div><div class="kpi-val">${total}</div><div class="kpi-sub">4 proyectos</div></div>
+    <div class="kpi-card" style="border-top:3px solid #166534"><div class="kpi-label">Completados</div><div class="kpi-val" style="color:#166534">${comp}</div><div class="kpi-sub">${Math.round(comp/total*100)}% del total</div></div>
+    <div class="kpi-card" style="border-top:3px solid #1E40AF"><div class="kpi-label">En progreso</div><div class="kpi-val" style="color:#1E40AF">${prog}</div><div class="kpi-sub">activos ahora</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--navy)"><div class="kpi-label">Avance promedio</div><div class="kpi-val">${avgAv}%</div><div class="kpi-sub">todos los proyectos</div></div>
+  </div><div class="proj-grid">`;
+
+  const projs = [...new Set(DATA.map(r=>r.p))];
+  projs.forEach(pn=>{
+    const c = PC[pn] || {h:"#888",lt:"#f5f5f5",txt:"#444"};
+    const rows = DATA.filter(r=>r.p===pn);
+    const done = rows.filter(r=>r.estado==="Completado").length;
+    const avP = Math.round(rows.reduce((s,r)=>s+r.avance,0)/rows.length);
+    const koRow = rows.find(r=>r.fase==="Kickoff");
+    const rango = rows[0]?.ini && rows[rows.length-1]?.fin
+      ? `${fmtD(rows[0].ini)} → ${fmtD(rows[rows.length-1].fin)}`
+      : "";
+    html += `<div class="proj-card" style="border-left-color:${c.h}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div class="proj-name" style="color:${c.txt}">${pn}</div>
+        <span style="font-size:10px;color:${c.txt};background:${c.lt};padding:2px 9px;border-radius:12px;font-weight:500">${done}/${rows.length} completados</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${rango}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Kickoff: ${koRow ? fmtD(koRow.ini) : "—"}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Avance promedio: ${avP}%</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${avP}%;background:${c.h}"></div></div>
+    </div>`;
+  });
+  html += "</div>";
+  document.getElementById("resumen-content").innerHTML = html;
+}
+
+// ─── TIMELINE ────────────────────────────────────────────────────────────────
+function renderTimeline(){
+  const fp = document.getElementById("tl-proj").value;
+  const ff = document.getElementById("tl-fase").value;
+  const rows = DATA.filter(r=>(!fp||r.p===fp)&&(!ff||r.fase===ff));
+  document.getElementById("tl-count").textContent = rows.length + " accionables";
+  if(!rows.length){ document.getElementById("tl-content").innerHTML='<div class="loading-state"><span>Sin datos con ese filtro</span></div>'; return; }
+
+  const allD = rows.flatMap(r=>[new Date(r.ini),new Date(r.fin)]).filter(d=>!isNaN(d));
+  if(!allD.length){ document.getElementById("tl-content").innerHTML='<div class="loading-state"><span>Fechas no disponibles</span></div>'; return; }
+  const minD = new Date(Math.min(...allD));
+  const maxD = new Date(Math.max(...allD));
+  const totalDays = Math.max(1,(maxD-minD)/86400000);
+
+  const months=[];
+  let cur=new Date(minD.getFullYear(),minD.getMonth(),1);
+  while(cur<=maxD){months.push(new Date(cur));cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);}
+
+  let html=`<div style="display:flex;gap:6px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:6px">
+    <div style="width:210px;flex-shrink:0;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Accionable</div>
+    <div style="flex:1;min-width:480px;position:relative;height:18px">`;
+  months.forEach(m=>{
+    const pct=((m-minD)/86400000/totalDays*100).toFixed(2);
+    html+=`<span style="position:absolute;left:${pct}%;font-size:10px;color:var(--text3);transform:translateX(-50%);white-space:nowrap">${MN[m.getMonth()]}${m.getFullYear()===2027?" '27":""}</span>`;
+  });
+  html+=`</div><div style="width:28px"></div></div>`;
+
+  let prevP=null;
+  rows.forEach(row=>{
+    const c=PC[row.p]||{h:"#888",lt:"#f5f5f5",txt:"#444"};
+    if(row.p!==prevP){
+      html+=`<div style="margin:10px 0 3px"><span class="tl-proj-tag" style="background:${c.h}">${row.p}</span></div>`;
+      prevP=row.p;
+    }
+    const iniD=new Date(row.ini), finD=new Date(row.fin);
+    const valid=!isNaN(iniD)&&!isNaN(finD);
+    const sp=valid?((iniD-minD)/86400000/totalDays*100).toFixed(2):0;
+    const wp=valid?Math.max(.4,(row.dur/totalDays*100)).toFixed(2):1;
+    const barCol=row.fase==="Pre-Kickoff"?"#2563EB":row.fase==="Kickoff"?"#D97706":c.h;
+    const op=row.estado==="Completado"?1:row.estado==="En progreso"?.85:.5;
+    const sem=semInfo(row);
+
+    html+=`<div style="display:flex;gap:6px;align-items:center;padding:3px 0;border-bottom:.5px solid #F1F5F9">
+      <div style="width:210px;flex-shrink:0;font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${row.acc}">[${row.num}] ${row.acc.substring(0,40)}…</div>
+      <div style="flex:1;min-width:480px;position:relative;height:22px">
+        ${row.fase==="Kickoff"
+          ?`<div style="position:absolute;left:${sp}%;width:3px;height:18px;top:2px;border-radius:1px;background:#D97706" title="KICKOFF ${fmtD(row.ini)}"></div>`
+          :`<div style="position:absolute;left:${sp}%;width:${wp}%;height:14px;top:4px;border-radius:3px;background:${barCol};opacity:${op}" title="${row.acc} · ${fmtD(row.ini)} → ${fmtD(row.fin)}"></div>`}
+      </div>
+      <div class="sem" style="background:${sem.bg};color:${sem.col};width:22px;height:22px;flex-shrink:0">${sem.sym}</div>
+    </div>`;
+  });
+
+  html+=`<div class="tl-legend">
+    <span class="tl-legend-item"><span style="display:inline-block;width:20px;height:7px;border-radius:2px;background:#2563EB"></span>Pre-Kickoff</span>
+    <span class="tl-legend-item"><span style="display:inline-block;width:3px;height:12px;border-radius:1px;background:#D97706"></span>Kickoff</span>
+    <span class="tl-legend-item"><span style="display:inline-block;width:20px;height:7px;border-radius:2px;background:#0D9488"></span>Post-Kickoff</span>
+    <span class="tl-legend-item"><span class="sem" style="background:#DCFCE7;color:#166534;width:18px;height:18px;font-size:10px">✓</span>Completado</span>
+    <span class="tl-legend-item"><span class="sem" style="background:#DBEAFE;color:#1E40AF;width:18px;height:18px;font-size:10px">●</span>En progreso</span>
+    <span class="tl-legend-item"><span class="sem" style="background:#FEF3C7;color:#92400E;width:18px;height:18px;font-size:10px">!</span>&lt;7 días</span>
+  </div>`;
+  document.getElementById("tl-content").innerHTML=html;
+}
+
+// ─── TABLERO ─────────────────────────────────────────────────────────────────
+function renderTablero(){
+  const fp=document.getElementById("flt-proj").value;
+  const ff=document.getElementById("flt-fase").value;
+  const fe=document.getElementById("flt-estado").value;
+  const fq=document.getElementById("search").value.toLowerCase();
+  const rows=DATA.filter(r=>
+    (!fp||r.p===fp)&&(!ff||r.fase===ff)&&(!fe||r.estado===fe)&&
+    (!fq||r.acc.toLowerCase().includes(fq)||r.p.toLowerCase().includes(fq))
+  );
+  document.getElementById("tbl-count").textContent=rows.length+" resultados";
+
+  let html=""; let prevP=null;
+  rows.forEach((row,ri)=>{
+    const c=PC[row.p]||{h:"#888",lt:"#f5f5f5",txt:"#444"};
+    const phasePill=row.fase==="Kickoff"?"pill-ko":row.fase==="Pre-Kickoff"?"pill-pre":"pill-post";
+    const ePill=row.estado==="Completado"?"pill-done":row.estado==="En progreso"?"pill-prog":"pill-pend";
+    const sem=semInfo(row);
+    const bg=ri%2===0?"":"#FAFBFC";
+
+    if(row.p!==prevP){
+      html+=`<tr class="sep"><td colspan="10" style="background:${c.h}">${row.p}</td></tr>`;
+      prevP=row.p;
+    }
+    html+=`<tr style="background:${bg}">
+      <td style="font-family:'DM Mono',monospace;font-size:10px;font-weight:500;color:${c.h};text-align:center">${row.num}</td>
+      <td style="font-size:11px;color:${c.txt};font-weight:500">${row.p}</td>
+      <td><span class="pill ${phasePill}">${row.fase}</span></td>
+      <td style="font-size:11px;max-width:260px" title="${row.acc}">${row.acc.length>65?row.acc.substring(0,65)+"…":row.acc}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${fmtD(row.ini)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${fmtD(row.fin)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px">${row.dur}</td>
+      <td><span class="pill ${ePill}">${row.estado||"Pendiente"}</span></td>
+      <td>
+        <div><div class="mini-bar"><div class="mini-fill" style="width:${row.avance}%;background:${c.h}"></div></div>
+        <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${row.avance}%</span></div>
+      </td>
+      <td style="text-align:center"><div class="sem" style="background:${sem.bg};color:${sem.col}">${sem.sym}</div></td>
+    </tr>`;
+  });
+
+  if(!html) html=`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3)">Sin resultados con ese filtro</td></tr>`;
+  document.getElementById("tbl-body").innerHTML=html;
+}
+
+// ─── PDF ─────────────────────────────────────────────────────────────────────
+function exportPDF(){
+  const tab=document.querySelector(".nav-tab.on").textContent.trim();
+  const d=new Date().toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit",year:"numeric"});
+  html2pdf().set({
+    margin:[10,8,10,8],
+    filename:`Framework_2026_${tab.replace(/\s+/g,"_")}_${d.replace(/\//g,"-")}.pdf`,
+    image:{type:"jpeg",quality:.92},
+    html2canvas:{scale:1.4,useCORS:true,logging:false},
+    jsPDF:{unit:"mm",format:"a4",orientation:"landscape"}
+  }).from(document.querySelector(".shell")).save();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById("footer-ts").textContent = new Date().toLocaleString("es-CO");
+
+if(!getApiUrl()){
+  document.getElementById("config-banner").style.display="flex";
+  setSyncState("error","URL no configurada");
+} else {
+  syncData();
+  // Auto-sync cada 5 minutos
+  setInterval(syncData, 5 * 60 * 1000);
+}
+</script>
+</body>
+</html>
