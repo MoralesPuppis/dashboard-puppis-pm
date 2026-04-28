@@ -150,6 +150,7 @@ footer{text-align:center;font-size:11px;color:var(--text3);padding:18px;border-t
 <div class="shell">
 
 
+
   <!-- RESUMEN -->
   <div class="pane on" id="pane-resumen">
     <div id="resumen-content">
@@ -238,19 +239,7 @@ const MN = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","D
 let DATA = [];
 let lastSync = null;
 
-function getApiUrl(){
-  return localStorage.getItem("pp_api_url") || APPS_SCRIPT_URL_DEFAULT;
-}
-function saveUrl(){
-  const v = document.getElementById("api-url-input").value.trim();
-  if(!v || !v.startsWith("https://script.google.com")){
-    alert("La URL no parece válida. Asegúrate de copiarla desde Apps Script → Implementar.");
-    return;
-  }
-  localStorage.setItem("pp_api_url", v);
-  document.getElementById("config-banner").style.display = "none";
-  syncData();
-}
+
 
 function setSyncState(state, msg){
   const dot = document.getElementById("sync-dot");
@@ -270,13 +259,11 @@ async function syncData(){
     const res = await fetch("https://raw.githubusercontent.com/MoralesPuppis/dashboard-puppis-pm/main/data.json?t=" + Date.now());
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
-    if(!json.data) throw new Error("Sin datos en el archivo");
-
+    if(!json.data) throw new Error("Sin datos");
     DATA = parseRows(json.data);
     lastSync = new Date();
     setSyncState("ok", "Actualizado " + lastSync.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}));
     document.getElementById("footer-ts").textContent = lastSync.toLocaleString("es-CO");
-
     populateFilters();
     renderResumen();
     renderTimeline();
@@ -288,34 +275,30 @@ async function syncData(){
 }
 
 function parseRows(raw){
-  return raw.map(r => {
-    // Buscar clave flexible ignorando saltos de linea y tildes
-    function get(r, keys){
-      for(const k of keys){
-        for(const rk of Object.keys(r)){
-          if(rk.replace(/\n/g," ").replace(/[^a-zA-Z0-9% ]/g,"").toLowerCase().trim() ===
-             k.replace(/[^a-zA-Z0-9% ]/g,"").toLowerCase().trim()){
-            return r[rk];
-          }
-        }
+  function g(r, keys){
+    const rkeys = Object.keys(r);
+    for(const k of keys){
+      const kn = k.toLowerCase().replace(/[^a-z0-9%]/g,"");
+      for(const rk of rkeys){
+        const rkn = rk.toLowerCase().replace(/[^a-z0-9%]/g,"");
+        if(rkn === kn) return r[rk];
       }
-      return "";
     }
-    const dur_raw = get(r, ["Dias Restantes","Duracion dias","Dias"]);
-    return {
-      p:      clean(get(r, ["Proyecto","proyecto"])),
-      fase:   clean(get(r, ["Fase","fase"])),
-      num:    clean(get(r, ["ID","#","Num Accionable"])),
-      acc:    clean(get(r, ["Accionable","accionable"])),
-      ini:    clean(get(r, ["Fecha Inicio","fecha inicio"])),
-      fin:    clean(get(r, ["Fecha Fin","fecha fin"])),
-      dur:    parseInt(dur_raw) || 0,
-      estado: clean(get(r, ["Estado","estado"])) || "Pendiente",
-      avance: parseInt(get(r, ["% Avance","avance","Avance"])) || 0,
-      resp:   clean(get(r, ["Responsable","responsable"])),
-      notas:  clean(get(r, ["Notas  Bloqueantes","Notas","notas"])),
-    };
-  }).filter(r => r.p && r.acc);
+    return "";
+  }
+  return raw.map(r => ({
+    p:      String(g(r,["Proyecto"]) || "").trim(),
+    fase:   String(g(r,["Fase"]) || "").trim(),
+    num:    String(g(r,["ID","Num Accionable"]) || "").trim(),
+    acc:    String(g(r,["Accionable"]) || "").trim(),
+    ini:    String(g(r,["Fecha Inicio","FechaInicio"]) || "").trim(),
+    fin:    String(g(r,["Fecha Fin","FechaFin"]) || "").trim(),
+    dur:    parseInt(g(r,["Das Restantes","Dias Restantes","Duracion"])) || 0,
+    estado: String(g(r,["Estado"]) || "Pendiente").trim(),
+    avance: parseInt(g(r,["%Avance","% Avance","Avance"])) || 0,
+    resp:   String(g(r,["Responsable"]) || "").trim(),
+    notas:  String(g(r,["Notas  Bloqueantes","Notas"]) || "").trim(),
+  })).filter(r => r.p && r.acc);
 }
 
 function clean(v){
@@ -538,11 +521,7 @@ function exportPDF(){
 document.getElementById("footer-ts").textContent = new Date().toLocaleString("es-CO");
 
 syncData();
-setInterval(syncData, 5 * 60 * 1000); else {
-  syncData();
-  // Auto-sync cada 5 minutos
-  setInterval(syncData, 5 * 60 * 1000);
-}
+setInterval(syncData, 5 * 60 * 1000);
 </script>
 </body>
 </html>
