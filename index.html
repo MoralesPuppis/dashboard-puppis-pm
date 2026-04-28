@@ -150,7 +150,6 @@ footer{text-align:center;font-size:11px;color:var(--text3);padding:18px;border-t
 <div class="shell">
 
 
-
   <!-- RESUMEN -->
   <div class="pane on" id="pane-resumen">
     <div id="resumen-content">
@@ -225,6 +224,9 @@ footer{text-align:center;font-size:11px;color:var(--text3);padding:18px;border-t
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 // INSTRUCCIÓN: Pega aquí tu URL de Apps Script entre las comillas
 // Ejemplo: "https://script.google.com/macros/s/AKfycbxXXX.../exec"
+const APPS_SCRIPT_URL_DEFAULT = "";
+// ─────────────────────────────────────────────────────────────────────────────
+
 const PC = {
   "Envío Programado":           {h:"#2563EB",lt:"#EFF6FF",txt:"#1D4ED8"},
   "Tienda Infinita":            {h:"#0D9488",lt:"#F0FDFA",txt:"#0F766E"},
@@ -236,7 +238,19 @@ const MN = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","D
 let DATA = [];
 let lastSync = null;
 
-// URL management not needed — data loaded directly from GitHub
+function getApiUrl(){
+  return localStorage.getItem("pp_api_url") || APPS_SCRIPT_URL_DEFAULT;
+}
+function saveUrl(){
+  const v = document.getElementById("api-url-input").value.trim();
+  if(!v || !v.startsWith("https://script.google.com")){
+    alert("La URL no parece válida. Asegúrate de copiarla desde Apps Script → Implementar.");
+    return;
+  }
+  localStorage.setItem("pp_api_url", v);
+  document.getElementById("config-banner").style.display = "none";
+  syncData();
+}
 
 function setSyncState(state, msg){
   const dot = document.getElementById("sync-dot");
@@ -251,19 +265,12 @@ function setSyncState(state, msg){
 }
 
 async function syncData(){
-  const url = getApiUrl();
-  if(!url){
-    document.getElementById("config-banner").style.display = "flex";
-    setSyncState("error", "URL no configurada");
-    return;
-  }
-
   setSyncState("loading", "Sincronizando…");
   try {
-    const res = await fetch(url);
+    const res = await fetch("https://raw.githubusercontent.com/MoralesPuppis/dashboard-puppis-pm/main/data.json?t=" + Date.now());
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
-    if(!json.ok || !json.data) throw new Error("Respuesta inesperada del script");
+    if(!json.data) throw new Error("Sin datos en el archivo");
 
     DATA = parseRows(json.data);
     lastSync = new Date();
@@ -275,9 +282,8 @@ async function syncData(){
     renderTimeline();
     renderTablero();
   } catch(err){
-    setSyncState("error", "Error de conexión");
+    setSyncState("error", "Error: " + err.message);
     showError(err.message);
-    console.error(err);
   }
 }
 
@@ -520,9 +526,12 @@ function exportPDF(){
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById("footer-ts").textContent = new Date().toLocaleString("es-CO");
 
-// Auto-sync al cargar y cada 5 minutos
 syncData();
-setInterval(syncData, 5 * 60 * 1000);
+setInterval(syncData, 5 * 60 * 1000); else {
+  syncData();
+  // Auto-sync cada 5 minutos
+  setInterval(syncData, 5 * 60 * 1000);
+}
 </script>
 </body>
 </html>
